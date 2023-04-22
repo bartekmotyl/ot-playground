@@ -24,7 +24,7 @@ export class State {
     this.actorId = actorId
     this.label = label
   }
-  public localUpdate(newText: string) {
+  public localUpdate(newText: string): Instruction[] {
     const oldText = this.buffer.getText()
     const changes = diffChars(oldText, newText)
 
@@ -33,14 +33,18 @@ export class State {
     changes.forEach((change) => {
       if (change.added) {
         newInstructions.push(new Insert(index, change.value))
-      }
-      if (change.removed) {
+        index += change.value.length
+      } else if (change.removed) {
         newInstructions.push(new Delete(index, change.value.length))
+      } else {
+        index += change.value.length
       }
-      index += change.value.length
     })
 
-    newInstructions.forEach((i) => i.applyTo(this.buffer))
+    newInstructions.forEach((i) => {
+      console.log(`applying local: ${i.toString()}`)
+      i.applyTo(this.buffer)
+    })
     newInstructions.forEach((instr) => {
       const msg: Message = {
         operation: instr,
@@ -53,7 +57,7 @@ export class State {
       this.myMessagesCount += 1
     })
 
-    //this.dump()
+    return newInstructions
   }
 
   public receive(message: Message) {
@@ -70,6 +74,10 @@ export class State {
     this.incoming = []
 
     received.forEach((msgReceived) => {
+      console.debug(
+        this.label,
+        `processReceived, oper ${msgReceived.operation.toString()}`
+      )
       const receivedMsgBeingProcessed = msgReceived
       // Discard acknowledged messages
       const index = this.outgoing.findIndex(
@@ -102,6 +110,9 @@ export class State {
         receivedMsgBeingProcessed.operation = ot[0]
         msgOutgoing.operation = ot[1]
       })
+      console.log(
+        `applying remote: ${receivedMsgBeingProcessed.operation.toString()}`
+      )
 
       receivedMsgBeingProcessed.operation.applyTo(this.buffer)
       this.otherMessagesCount += 1

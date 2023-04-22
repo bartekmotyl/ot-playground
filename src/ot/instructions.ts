@@ -1,4 +1,3 @@
-import { count } from "rxjs"
 import { Buffer } from "./buffer"
 import { Message } from "./state"
 
@@ -137,8 +136,8 @@ export class Insert implements Instruction {
       } else {
         // The delete is in the middle of our insertion, so we need to split our insertion into two parts
         const adjustedLength1 = other.index - this.index
-        const _adjustedLength2 =
-          this.text.length - adjustedLength1 - other.length
+        //const _adjustedLength2 =
+        //  this.text.length - adjustedLength1 - other.length
         const transformedInsert1 = new Insert(
           this.index,
           this.text.substring(0, adjustedLength1)
@@ -170,7 +169,7 @@ export class Delete implements Instruction {
   static tryParse(json: string): Delete | undefined {
     const obj = JSON.parse(json)
     if (obj.instructionType === "delete") {
-      return new Delete(obj.length, obj.index)
+      return new Delete(obj.index, obj.length)
     }
     return undefined
   }
@@ -184,7 +183,7 @@ export class Delete implements Instruction {
 
   public xform(
     other: Instruction,
-    otherWins: boolean
+    _otherWins: boolean
   ): [transformedThis: Instruction, transformedOther: Instruction] {
     console.debug(`xform: ${this.instructionType} vs ${other.instructionType}`)
     if (other instanceof Delete) {
