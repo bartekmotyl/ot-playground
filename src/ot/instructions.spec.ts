@@ -42,18 +42,18 @@ describe("instruction conflicts", () => {
       new Insert(1, "a")
     )
 
-    expect(text1).toEqual("1ba2345")
-    expect(text2).toEqual("1ba2345")
+    expect(text1).toEqual("1ab2345")
+    expect(text2).toEqual("1ab2345")
   })
 
-  test.only("insert-insert at same position", () => {
+  test("insert-insert at same position", () => {
     const { text1, text2 } = testTwoInstructions(
       "12345",
       new Insert(1, "b"),
       new Delete(2, 1)
     )
 
-    expect(text1).toEqual("1b345")
-    expect(text2).toEqual("1b345")
+    expect(text1).toEqual("1b245")
+    expect(text2).toEqual("1b245")
   })
 })

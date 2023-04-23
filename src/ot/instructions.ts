@@ -3,15 +3,19 @@ import { Message } from "./state"
 
 export interface Instruction {
   applyTo(buffer: Buffer): void
-  /** Transforms the other instruction (in relation to current instruction) that satisfies the following condition:
-   * Applying instruction represented by 'this' followed by applying instruction returned as transformedOther
-   * gives the same result as applying instruction represented by 'other' followed by 'transformedThis'.
+  /**
+   * This function implement Operation Transformation. Each class implementing the Instruction
+   * interface should implement this method in a way that supports conflicts with any of the other instruction types,
+   * including same type.
+   * The returned pair of instruction satisfies the following condition:
+   * Applying instruction represented by 'this' followed by applying instruction returned as 'transformedOther'
+   * yields the same result as applying instruction represented by 'other' followed by 'transformedThis'.
    * In case of lack of criteria to decide, please use lastResort parameter which is expected
-   * to be of opposite value on both sides.
+   * to have opposite value on "both sides".
    */
   xform(
     other: Instruction,
-    otherWins: boolean
+    lastResort: boolean
   ): [transformedThis: Instruction, transformedOther: Instruction]
   instructionType: string
   toString(): string
@@ -24,8 +28,8 @@ export class NoOp implements Instruction {
   }
   public xform(
     other: Instruction,
-    _otherWins: boolean
-  ): [transformedThis: Instruction, transformedOther: Instruction] {
+    _lastResort: boolean
+  ): [Instruction, Instruction] {
     return [this, other]
   }
   public toString() {
@@ -72,94 +76,34 @@ export class Insert implements Instruction {
     }
     return new Insert(index, text)
   }
+
   public xform(
     other: Instruction,
-    otherWins: boolean
-  ): [transformedThis: Instruction, transformedOther: Instruction] {
-    console.debug(`xform: ${this.instructionType} vs ${other.instructionType}`)
-
-    if (other instanceof Insert) {
+    lastResort: boolean
+  ): [Instruction, Instruction] {
+    if (other instanceof NoOp) {
+      return [this, other]
+    } else if (other instanceof Insert) {
       if (
         this.index < other.index ||
-        (this.index === other.index && !otherWins)
+        (this.index === other.index && lastResort)
       ) {
-        // This insert happened before the other insert or at the same index
-        // We need to adjust the index of the other insert by the length of our text
-        const transformedOther = new Insert(
-          other.index + this.text.length,
-          other.text
-        )
-        return [cloneOperation(this), cloneOperation(transformedOther)]
+        return [this, new Insert(other.index + this.text.length, other.text)]
       } else {
-        // This insert happened after the other insert
-        // We need to adjust our index by the length of the other text
-        const transformedThis = new Insert(
-          this.index + other.text.length,
-          this.text
-        )
-        return [cloneOperation(transformedThis), cloneOperation(other)]
+        return [new Insert(this.index + other.text.length, this.text), other]
       }
     } else if (other instanceof Delete) {
-      if (other.index + other.length <= this.index) {
-        // The delete happened before our insertion point, so we don't need to adjust
-        return [this, other]
-      } else if (other.index >= this.index + this.text.length) {
-        // The delete happened after our insertion point, so we don't need to adjust
-        return [this, other]
-      } else if (
-        other.index <= this.index &&
-        other.index + other.length >= this.index + this.text.length
-      ) {
-        // Our entire insertion is deleted, so we need to return null for our transformed insert operation
-        return [new NoOp(), new Delete(this.index, this.text.length)]
-      } else if (other.index <= this.index) {
-        // The delete overlaps with the beginning of our insertion, so we need to adjust the index of our insertion
-        const adjustedIndex = this.index - other.length
-        const adjustedLength =
-          this.text.length + this.index - (other.index + other.length)
-        const transformedInsert = new Insert(
-          adjustedIndex,
-          this.text.substring(adjustedLength)
-        )
-        return [
-          transformedInsert,
-          new Delete(other.index, other.length + adjustedLength),
-        ]
-      } else if (other.index + other.length >= this.index + this.text.length) {
-        // The delete overlaps with the end of our insertion, so we need to adjust the length of our insertion
-        const adjustedLength = this.index - other.index
-        const transformedInsert = new Insert(
-          this.index,
-          this.text.substring(0, adjustedLength)
-        )
-        return [
-          transformedInsert,
-          new Delete(
-            other.index,
-            other.length + this.text.length - adjustedLength
-          ),
-        ]
+      if (this.index <= other.index) {
+        return [this, new Delete(other.index + this.text.length, other.length)]
+      } else if (this.index >= other.index + other.length) {
+        return [new Insert(this.index - other.length, this.text), other]
       } else {
-        // The delete is in the middle of our insertion, so we need to split our insertion into two parts
-        const adjustedLength1 = other.index - this.index
-        //const _adjustedLength2 =
-        //  this.text.length - adjustedLength1 - other.length
-        const transformedInsert1 = new Insert(
-          this.index,
-          this.text.substring(0, adjustedLength1)
-        )
-        const transformedInsert2 = new Insert(
-          this.index + adjustedLength1,
-          this.text.substring(adjustedLength1 + other.length)
-        )
-        return [
-          Insert.concat(transformedInsert1, transformedInsert2),
-          new Delete(other.index, other.length),
-        ]
+        // Unsupported operation
+        throw new Error("Unsupported operation")
       }
-    } else {
-      throw new Error(`unsupported operation: ${other.instructionType}`)
     }
+    // Unsupported operation
+    throw new Error("Unsupported operation")
   }
 }
 
@@ -189,106 +133,37 @@ export class Delete implements Instruction {
 
   public xform(
     other: Instruction,
-    _otherWins: boolean
-  ): [transformedThis: Instruction, transformedOther: Instruction] {
-    console.debug(`xform: ${this.instructionType} vs ${other.instructionType}`)
-    if (other instanceof Delete) {
-      const thisIndex = this.index
-      const otherIndex = other.index
-      const thisEndIndex = this.index + this.length
-      const otherEndIndex = other.index + other.length
-
-      if (thisIndex >= otherEndIndex || otherIndex >= thisEndIndex) {
-        // No overlap, no transformation needed
-        return [this, other]
-      } else if (thisIndex <= otherIndex && thisEndIndex >= otherEndIndex) {
-        // Other is completely contained within this, so just adjust the indices
-        const transformedOther = new Delete(
-          other.index - this.length,
-          other.length
-        )
-        return [this, transformedOther]
-      } else if (thisIndex >= otherIndex && thisEndIndex <= otherEndIndex) {
-        // This is completely contained within other, so this delete becomes a no-op
-        const transformedThis = new NoOp()
-        return [transformedThis, other]
-      } else if (thisIndex < otherIndex) {
-        // This overlaps with the left side of other, so adjust the length of this and the index of other
-        const newLength = otherIndex - thisIndex
-        const transformedThis = new Delete(thisIndex, newLength)
-        const transformedOther = new Delete(
-          other.index - newLength,
-          other.length
-        )
-        return [transformedThis, transformedOther]
-      } else {
-        // This overlaps with the right side of other, so adjust the length of this and the index of other
-        const newLength = thisEndIndex - otherEndIndex
-        const transformedThis = new Delete(
-          thisIndex + other.length - newLength,
-          newLength
-        )
-        const transformedOther = new Delete(
-          other.index,
-          other.length - newLength
-        )
-        return [transformedThis, transformedOther]
-      }
+    lastResort: boolean
+  ): [Instruction, Instruction] {
+    if (other instanceof NoOp) {
+      return [this, other]
     } else if (other instanceof Insert) {
-      const thisIndex = this.index
-      const otherIndex = other.index
-      const otherEndIndex = other.index + other.text.length
-
-      if (otherIndex >= thisIndex + this.length) {
-        // Other insertion doesn't affect this delete, no transformation needed
+      if (other.index <= this.index) {
+        return [new Delete(this.index + other.text.length, this.length), other]
+      } else if (other.index >= this.index + this.length) {
         return [this, other]
-      } else if (otherEndIndex <= thisIndex) {
-        // Other insertion happens before this delete, adjust index of this delete
-        const transformedThis = new Delete(
-          thisIndex + other.text.length,
-          this.length
-        )
-        return [transformedThis, other]
-      } else if (
-        otherIndex <= thisIndex &&
-        otherEndIndex >= thisIndex + this.length
-      ) {
-        // Other insertion completely covers this delete, this delete becomes a no-op
-        const transformedThis = new NoOp()
-        return [transformedThis, other]
-      } else if (
-        otherIndex > thisIndex &&
-        otherEndIndex < thisIndex + this.length
-      ) {
-        // Other insertion is completely contained within this delete, adjust length of this delete and transform other insertion
-        const transformedThis = new Delete(
-          thisIndex,
-          this.length - other.text.length
-        )
-        const transformedOther = new Insert(
-          other.index - (this.length - transformedThis.length),
-          other.text
-        )
-        return [transformedThis, transformedOther]
-      } else if (otherIndex < thisIndex) {
-        // Other insertion overlaps with the left side of this delete, adjust index and text of other insertion
-        const overlap = thisIndex - otherIndex
-        const transformedOther = new Insert(
-          other.index + overlap,
-          other.text.slice(overlap)
-        )
-        return [this, transformedOther]
       } else {
-        // Other insertion overlaps with the right side of this delete, adjust text of other insertion
-        const overlap = otherEndIndex - thisIndex - this.length
-        const transformedOther = new Insert(
-          other.index,
-          other.text.slice(0, other.text.length - overlap)
+        throw new Error("Unsupported conflict")
+      }
+    } else if (other instanceof Delete) {
+      if (other.index > this.index) {
+        return [new Delete(this.index, this.length), other]
+      } else if (other.index + other.length < this.index) {
+        return [this, other]
+      } else {
+        const start = Math.min(this.index, other.index)
+        const end = Math.max(
+          this.index + this.length,
+          other.index + other.length
         )
-        return [this, transformedOther]
+        return [new Delete(start, end - start), new NoOp()]
       }
     } else {
-      throw new Error(`unsupported operation: ${other.instructionType}`)
+      if (lastResort) {
+        return [other, this]
+      } else {
+        throw new Error("Unsupported instruction")
+      }
     }
   }
 }
