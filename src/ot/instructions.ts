@@ -3,6 +3,12 @@ import { Message } from "./state"
 
 export interface Instruction {
   applyTo(buffer: Buffer): void
+  /** Transforms the other instruction (in relation to current instruction) that satisfies the following condition:
+   * Applying instruction represented by 'this' followed by applying instruction returned as transformedOther
+   * gives the same result as applying instruction represented by 'other' followed by 'transformedThis'.
+   * In case of lack of criteria to decide, please use lastResort parameter which is expected
+   * to be of opposite value on both sides.
+   */
   xform(
     other: Instruction,
     otherWins: boolean
