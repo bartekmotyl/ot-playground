@@ -8,6 +8,10 @@
     "preview": "vite preview"
   },
   "devDependencies": {
+    "@preact/preset-vite": "^2.5.0",
+    "autoprefixer": "^10.4.14",
+    "postcss": "^8.4.23",
+    "tailwindcss": "^3.3.2",
     "ts-jest": "^29.1.0",
     "typescript": "^5.0.2",
     "vite": "^4.3.0"
@@ -15,8 +19,11 @@
   "dependencies": {
     "@types/diff": "^5.0.3",
     "@types/jest": "^29.5.1",
+    "@types/lodash": "^4.14.194",
     "diff": "^5.1.0",
     "jest": "^29.5.0",
+    "lodash": "^4.17.21",
+    "preact": "^10.13.2",
     "rxjs": "^7.8.0"
   }
 }

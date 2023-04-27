@@ -76,39 +76,39 @@ export class Insert implements Instruction {
     }
     return new Insert(index, text)
   }
-  public xform(other: Instruction, lastResort: boolean): [Instruction, Instruction] {
+  public xform(
+    other: Instruction,
+    lastResort: boolean
+  ): [Instruction, Instruction] {
     if (other instanceof Insert) {
-      // if both instructions are insertions at different indices, the one with lower index takes precedence
-      if (this.index < other.index) {
-        return [this, new Insert(other.index + this.text.length, other.text)];
+      if (
+        this.index < other.index ||
+        (this.index === other.index && lastResort)
+      ) {
+        return [this, new Insert(other.index + this.text.length, other.text)]
       } else if (this.index > other.index) {
-        return [new Insert(this.index + other.text.length, this.text), other];
-      }
-      // if both instructions are insertions at the same index, they are transformed based on their order
-      if (this.index == other.index) {
-        if (lastResort) {
-          return [this, new NoOp()];
-        }
-        return [new NoOp(), other];
+        return [new Insert(this.index + other.text.length, this.text), other]
       }
     } else if (other instanceof Delete) {
       // inserting text at an index after a deletion shifts the index to the right
       if (this.index >= other.index + other.length) {
-        return [new Insert(this.index - other.length, this.text), other];
+        return [new Insert(this.index - other.length, this.text), other]
       } else if (this.index < other.index) {
-        return [this, other];
-      } else if (this.index >= other.index && this.index < other.index + other.length) {
+        return [this, other]
+      } else if (
+        this.index >= other.index &&
+        this.index < other.index + other.length
+      ) {
         if (lastResort) {
-          return [new Insert(other.index, this.text), new NoOp()];
+          return [new Insert(other.index, this.text), new NoOp()]
         }
-        return [new NoOp(), other];
+        return [new NoOp(), other]
       }
     } else if (other instanceof NoOp) {
-      return [this, other];
+      return [this, other]
     }
-    throw new Error("Unsupported instruction type");
+    throw new Error("Unsupported instruction type")
   }
-
 }
 
 export class Delete implements Instruction {
@@ -135,51 +135,96 @@ export class Delete implements Instruction {
     return `[delete at ${this.index}, "${this.length} characters"]`
   }
 
-  public xform(other: Instruction, lastResort: boolean): [Instruction, Instruction] {
+  public xform(
+    other: Instruction,
+    lastResort: boolean
+  ): [Instruction, Instruction] {
     if (other instanceof Insert) {
       // deleting text at an index before an insertion shifts the index to the right
       if (this.index >= other.index + other.text.length) {
-        return [new Delete(this.index - other.text.length, this.length), other];
+        return [new Delete(this.index - other.text.length, this.length), other]
       } else if (this.index + this.length <= other.index) {
-        return [this, other];
-      } else if (this.index < other.index && this.index + this.length > other.index) {
+        return [this, other]
+      } else if (
+        this.index < other.index &&
+        this.index + this.length > other.index
+      ) {
         if (lastResort) {
-          return [new Delete(this.index, other.index - this.index), new Insert(other.index, other.text)];
+          return [
+            new Delete(this.index, other.index - this.index),
+            new Insert(other.index, other.text),
+          ]
         }
-        return [new Insert(other.index + this.length, other.text), other];
-      } else if (this.index >= other.index && this.index + this.length <= other.index + other.text.length) {
-        return [new NoOp(), other];
-      } else if (this.index >= other.index && this.index < other.index + other.text.length && this.index + this.length > other.index + other.text.length) {
+        return [new Insert(other.index + this.length, other.text), other]
+      } else if (
+        this.index >= other.index &&
+        this.index + this.length <= other.index + other.text.length
+      ) {
+        return [new NoOp(), other]
+      } else if (
+        this.index >= other.index &&
+        this.index < other.index + other.text.length &&
+        this.index + this.length > other.index + other.text.length
+      ) {
         if (lastResort) {
-          return [new Delete(this.index, this.length - (other.index + other.text.length - this.index)), new Insert(other.index, other.text)];
+          return [
+            new Delete(
+              this.index,
+              this.length - (other.index + other.text.length - this.index)
+            ),
+            new Insert(other.index, other.text),
+          ]
         }
-        return [new Insert(other.index + this.length - (other.index + other.text.length - this.index), other.text), other];
+        return [
+          new Insert(
+            other.index +
+              this.length -
+              (other.index + other.text.length - this.index),
+            other.text
+          ),
+          other,
+        ]
       }
     } else if (other instanceof Delete) {
       // deleting text at an index before another deletion shifts the index to the right
       if (this.index >= other.index + other.length) {
-        return [new Delete(this.index - other.length, this.length), other];
+        return [new Delete(this.index - other.length, this.length), other]
       } else if (this.index + this.length <= other.index) {
-        return [this, other];
-      } else if (this.index < other.index && this.index + this.length > other.index) {
+        return [this, other]
+      } else if (
+        this.index < other.index &&
+        this.index + this.length > other.index
+      ) {
         if (lastResort) {
-          return [new Delete(this.index, other.index - this.index), new NoOp()];
+          return [new Delete(this.index, other.index - this.index), new NoOp()]
         }
-        return [new NoOp(), other];
-      } else if (this.index >= other.index && this.index + this.length <= other.index + other.length) {
-        return [new NoOp(), other];
-      } else if (this.index >= other.index && this.index < other.index + other.length && this.index + this.length > other.index + other.length) {
+        return [new NoOp(), other]
+      } else if (
+        this.index >= other.index &&
+        this.index + this.length <= other.index + other.length
+      ) {
+        return [new NoOp(), other]
+      } else if (
+        this.index >= other.index &&
+        this.index < other.index + other.length &&
+        this.index + this.length > other.index + other.length
+      ) {
         if (lastResort) {
-          return [new Delete(this.index, this.length - (other.index + other.length - this.index)), new NoOp()];
+          return [
+            new Delete(
+              this.index,
+              this.length - (other.index + other.length - this.index)
+            ),
+            new NoOp(),
+          ]
         }
-        return [new NoOp(), other];
+        return [new NoOp(), other]
       }
     } else if (other instanceof NoOp) {
-      return [this, other];
+      return [this, other]
     }
-    throw new Error("Unsupported instruction type");
-  }  
-
+    throw new Error("Unsupported instruction type")
+  }
 }
 
 export function cloneOperation(oper: Instruction): Instruction {

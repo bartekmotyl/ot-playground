@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vite + TS</title>
+    <style>
+      .outerContainer {
+        display: flex;
+        flex-direction: row;
+        align-items: stretch;
+        width: 1000px;
+        height: 700px;
+        padding: 50px;
+        gap: 20px;
+      }
+      .textareaContainer {
+        display: flex;
+        flex-direction: column;
+        width: 500px;
+        height: 500px;
+      }
+      textarea {
+        width: 100%;
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/simulator.tsx"></script>
+  </body>
+</html>
