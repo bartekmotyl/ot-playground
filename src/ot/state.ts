@@ -1,6 +1,6 @@
 import { diffChars } from "diff"
 import { Buffer, SimpleBuffer } from "./buffer"
-import { Delete, Insert, Instruction, cloneMessage } from "./instructions"
+import { Instruction, cloneMessage } from "./instructions"
 import { Subject } from "rxjs"
 
 export type Message = {
@@ -31,6 +31,8 @@ export class State {
     let index = 0
     const newInstructions: Instruction[] = []
     changes.forEach((change) => {
+      // TODO
+      /*
       if (change.added) {
         newInstructions.push(new Insert(index, change.value))
         index += change.value.length
@@ -39,6 +41,7 @@ export class State {
       } else {
         index += change.value.length
       }
+      */
     })
 
     newInstructions.forEach((i) => {
