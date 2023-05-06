@@ -1,35 +1,33 @@
 import "./TextBlock.css"
 import { range } from "lodash"
 export type TextBlockProps = {
-  prefix: number,
-  removed: number,
-  added: number, 
-  suffix: number,
-  label: string,
+  prefix: string,
+  removed: string,
+  added: string, 
+  suffix: string,
 }
 
 export function TextBlock(props: TextBlockProps) {
-  const letter = (i: number) => String.fromCharCode('A'.charCodeAt(0) + i)
 
   return (
     <div class="flex">
-       {range(props.prefix).map(i => (
-        <CharacterBlock content={letter(i)} color={0}/>
+       {Array.from(props.prefix).map(c => (
+        <CharacterBlock content={c} color={0}/>
        ))}
        <div class="flex flex-col">
          <div class="flex">
-         {range(props.removed).map(i => (
-            <CharacterBlock content={letter(props.prefix+i)} color={2}/>
+         {Array.from(props.removed).map(c => (
+            <CharacterBlock content={c} color={2}/>
           ))}
          </div>
          <div class="flex">
-         {range(props.added).map(i => (
-            <CharacterBlock content={props.label + i.toString()} color={1}/>
+         {Array.from(props.added).map(c => (
+            <CharacterBlock content={c} color={1}/>
           ))}
          </div>
        </div>
-       {range(props.suffix).map(i => (
-        <CharacterBlock content={letter(props.prefix + props.removed + i)} color={0}/>
+       {Array.from(props.suffix).map(c => (
+        <CharacterBlock content={c} color={0}/>
        ))}       
     </div>
   )
