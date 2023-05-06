@@ -44,6 +44,35 @@ export class NoOp implements Instruction {
   }
 }
 
+export class Change implements Instruction {
+  instructionType: string = "change"
+  index: number
+  remove: number
+  text: string
+
+  public constructor(index: number, remove: number, text: string) {
+    this.index = index
+    this.remove = remove
+    this.text = text
+  }
+
+  applyTo(buffer: Buffer): void {
+    buffer.delete(this.index, this.remove)
+    buffer.insert(this.index, this.text)
+  }
+
+  xform(
+    other: Instruction,
+    lastResort: boolean
+  ): [transformedThis: Instruction, transformedOther: Instruction] {
+    throw new Error("Method not implemented.")
+  }
+
+  toString(): string {
+    return `[change at ${this.index}: remove ${this.remove} replace by '${this.text}']`
+  }
+}
+
 export class Insert implements Instruction {
   instructionType: string = "insert"
   text: string

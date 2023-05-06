@@ -1,10 +1,11 @@
 import "./TextBlock.css"
 import { range } from "lodash"
-type TextBlockProps = {
+export type TextBlockProps = {
   prefix: number,
   removed: number,
   added: number, 
   suffix: number,
+  label: string,
 }
 
 export function TextBlock(props: TextBlockProps) {
@@ -23,7 +24,7 @@ export function TextBlock(props: TextBlockProps) {
          </div>
          <div class="flex">
          {range(props.added).map(i => (
-            <CharacterBlock content={i.toString()} color={1}/>
+            <CharacterBlock content={props.label + i.toString()} color={1}/>
           ))}
          </div>
        </div>
@@ -41,7 +42,7 @@ type CharacterBlockProps = {
 
 
 function CharacterBlock(props: CharacterBlockProps) {
-  let classes = "w-6 h-8 m-0.5 align-middle text-center border-solid border-2 "
+  let classes = "w-7 h-8 m-0.5 align-middle text-center border-solid border-2 "
   if (props.color === 0) {
     classes += "bg-cyan-300 border-indigo-600"
   } else if (props.color === 1) {
