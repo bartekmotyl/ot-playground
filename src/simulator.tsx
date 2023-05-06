@@ -19,13 +19,13 @@ function calcTextBlockProps(text: string, change: Change): TextBlockProps {
 function App() {
 	const [ initialState, updateInitialState ] = useState('ABCDEFGHIJKLMNOP')
 
-	const [ changePrimary1Index, setChangePrimary1Index ] = useState(1)
-	const [ changePrimary1Remove, setChangePrimary1Remove ] = useState(5)
-	const [ changePrimary1Add, setChangePrimary1Add ] = useState('xy')
+	const [ changePrimaryIndex, setChangePrimaryIndex ] = useState(3)
+	const [ changePrimaryRemove, setChangePrimaryRemove ] = useState(5)
+	const [ changePrimaryAdd, setChangePrimaryAdd ] = useState('xy')
 
-	const [ changeSecondary1Index, setChangeSecondary1Index ] = useState(2)
-	const [ changeSecondary1Remove, setChangeSecondary1Remove ] = useState(8)
-	const [ changeSecondary1Add, setChangeSecondary1Add ] = useState('st')
+	const [ changeSecondaryIndex, setChangeSecondaryIndex ] = useState(1)
+	const [ changeSecondaryRemove, setChangeSecondaryRemove ] = useState(9)
+	const [ changeSecondaryAdd, setChangeSecondaryAdd ] = useState('st')
 
 
 	//const initialState = 'ABCDEFGHIJKLMNOP'
@@ -37,48 +37,69 @@ function App() {
 	bufferSecondary.insert(0, initialState)
 
 
-	const changePrimary1 = new Change(changePrimary1Index, changePrimary1Remove, changePrimary1Add)
+	const changePrimary = new Change(changePrimaryIndex, changePrimaryRemove, changePrimaryAdd)
 	const primaryText0 = bufferPrimary.getText()
-	const propsPrimary1 = calcTextBlockProps(bufferPrimary.getText(), changePrimary1)
-	changePrimary1.applyTo(bufferPrimary)
+	const propsPrimary1 = calcTextBlockProps(bufferPrimary.getText(), changePrimary)
+	changePrimary.applyTo(bufferPrimary)
 	const primaryText1 = bufferPrimary.getText()
 	
-	const changeSecondary1 = new Change(changeSecondary1Index, changeSecondary1Remove, changeSecondary1Add)
+	const changeSecondary = new Change(changeSecondaryIndex, changeSecondaryRemove, changeSecondaryAdd)
 	const secondaryText0 = bufferSecondary.getText()
-	const propsSecondary1 = calcTextBlockProps(bufferSecondary.getText(), changeSecondary1)
-	changeSecondary1.applyTo(bufferSecondary)
+	const propsSecondary1 = calcTextBlockProps(bufferSecondary.getText(), changeSecondary)
+	changeSecondary.applyTo(bufferSecondary)
 	const secondaryText1 = bufferSecondary.getText()
 
+	const xformOfChangePrimary = changePrimary.xform(changeSecondary, true)
+	const xformOfChangeSecondary = changeSecondary.xform(changePrimary, false)
+
+	xformOfChangePrimary[1].applyTo(bufferPrimary)
+
+	xformOfChangeSecondary[1].applyTo(bufferSecondary)
+	const primaryText2 = bufferPrimary.getText()
+	const secondaryText2 = bufferSecondary.getText()
 	return (
 		<div>
 			<label class="m-1">Initial</label><input class="border-solid border-2 m-1 font-mono" type="text" id="initialText" value={initialState} onInput={e => updateInitialState((e.target as HTMLInputElement).value)}/>
 			<h1 class="text-4xl">Primary</h1>
 			<div class="font-mono">{primaryText0}</div>
 			<ChangeConfig 
-				index={changePrimary1Index} 
-				setIndex={setChangePrimary1Index}
-				remove={changePrimary1Remove}
-				setRemove={setChangePrimary1Remove}
-				add={changePrimary1Add}
-				setAdd={setChangePrimary1Add}
+				index={changePrimaryIndex} 
+				setIndex={setChangePrimaryIndex}
+				remove={changePrimaryRemove}
+				setRemove={setChangePrimaryRemove}
+				add={changePrimaryAdd}
+				setAdd={setChangePrimaryAdd}
 				/>
-			<div class="font-mono">{changePrimary1.toString()}</div>
+			<div class="font-mono">{changePrimary.toString()}</div>
 			<TextBlock {...propsPrimary1} />
 			<div class="font-mono">{primaryText1}</div>
-			
+			<div class="font-mono">Result: {primaryText2}</div>
+
 			<h1 class="text-4xl">Secondary</h1>
 			<div class="font-mono">{secondaryText0}</div>
 			<ChangeConfig 
-				index={changeSecondary1Index} 
-				setIndex={setChangeSecondary1Index}
-				remove={changeSecondary1Remove}
-				setRemove={setChangeSecondary1Remove}
-				add={changeSecondary1Add}
-				setAdd={setChangeSecondary1Add}
+				index={changeSecondaryIndex} 
+				setIndex={setChangeSecondaryIndex}
+				remove={changeSecondaryRemove}
+				setRemove={setChangeSecondaryRemove}
+				add={changeSecondaryAdd}
+				setAdd={setChangeSecondaryAdd}
 				/>
-			<div class="font-mono">{changeSecondary1.toString()}</div>
+			<div class="font-mono">{changeSecondary.toString()}</div>
 			<TextBlock {...propsSecondary1} />
 			<div class="font-mono">{secondaryText1}</div>
+			<div class="font-mono">Result: {secondaryText2}</div>
+
+			<p>
+				<div> 
+					{ secondaryText2 === primaryText2  && 
+						<div class="bg-green-500">PASS</div>
+					} 
+					{ secondaryText2 !== primaryText2  && 
+						<div class="bg-rose-500">FAIL</div>
+					}
+				</div>
+			</p>
 		</div>
 	)
 }

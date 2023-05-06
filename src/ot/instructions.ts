@@ -10,12 +10,12 @@ export interface Instruction {
    * The returned pair of instruction satisfies the following condition:
    * Applying instruction represented by 'this' followed by applying instruction returned as 'transformedOther'
    * yields the same result as applying instruction represented by 'other' followed by 'transformedThis'.
-   * In case of lack of criteria to decide, please use lastResort parameter which is expected
+   * In case of lack of criteria to decide, please use isPrimary parameter which is expected
    * to have opposite value on "both sides".
    */
   xform(
     other: Instruction,
-    lastResort: boolean
+    isPrimary: boolean
   ): [transformedThis: Instruction, transformedOther: Instruction]
   instructionType: string
   toString(): string
@@ -28,7 +28,7 @@ export class NoOp implements Instruction {
   }
   public xform(
     other: Instruction,
-    _lastResort: boolean
+    _isPrimary: boolean
   ): [Instruction, Instruction] {
     return [this, other]
   }
@@ -63,9 +63,39 @@ export class Change implements Instruction {
 
   xform(
     other: Instruction,
-    lastResort: boolean
+    isPrimary: boolean
   ): [transformedThis: Instruction, transformedOther: Instruction] {
-    throw new Error("Method not implemented.")
+    if (other instanceof NoOp) {
+      return [new NoOp(), new NoOp()]
+    }
+    if (other instanceof Change) {
+      const left =
+        this.index < other.index || (this.index === other.index && isPrimary)
+          ? this
+          : other
+      const isThisLeft = this === left
+      const right = isThisLeft ? other : this
+      const result = Change.xformChangeOriented(left, right)
+
+      if (isThisLeft) {
+        return [result[0], result[1]]
+      } else {
+        return [result[1], result[0]]
+      }
+    }
+
+    throw new Error("Unknown operation type")
+  }
+
+  static xformChangeOriented(
+    left: Change,
+    right: Change
+  ): [transformedLeft: Instruction, transformedRight: Instruction] {
+    if (left.index + left.remove <= right.index) {
+      const offset = left.text.length - left.remove
+      return [left, new Change(right.index + offset, right.remove, right.text)]
+    }
+    return [new Change(0, 999, "ERR-LEFT"), new Change(0, 999, "ERR-RIGHT")]
   }
 
   toString(): string {
