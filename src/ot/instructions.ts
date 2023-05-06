@@ -92,9 +92,32 @@ export class Change implements Instruction {
     right: Change
   ): [transformedLeft: Instruction, transformedRight: Instruction] {
     if (left.index + left.remove <= right.index) {
+      // right (removed part) does not overlap with left
       const offset = left.text.length - left.remove
       return [left, new Change(right.index + offset, right.remove, right.text)]
+    } else if (left.index + left.remove >= right.index + right.remove) {
+      // right (removed part) is fully "included" in the left (removed part)
+      return [
+        new Change(
+          left.index,
+          left.remove - right.remove + right.text.length,
+          left.text + right.text
+        ),
+        new Change(left.index + left.text.length, 0, right.text),
+      ]
+    } else if (left.index + left.remove < right.index + right.remove) {
+      // right (removed part) starts after left, but finishes after right
+
+      return [
+        new Change(left.index, right.index - left.index, left.text),
+        new Change(
+          left.index + left.text.length,
+          right.index + right.remove - (left.index + left.remove),
+          right.text
+        ),
+      ]
     }
+
     return [new Change(0, 999, "ERR-LEFT"), new Change(0, 999, "ERR-RIGHT")]
   }
 

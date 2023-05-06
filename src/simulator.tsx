@@ -73,7 +73,7 @@ function App() {
 			<div class="font-mono">{changePrimary.toString()}</div>
 			<TextBlock {...propsPrimary1} />
 			<div class="font-mono">{primaryText1}</div>
-			<div class="font-mono">Result: {primaryText2}</div>
+			<div class="font-mono">Result (after applied transformed secondary change): {primaryText2}</div>
 
 			<h1 class="text-4xl">Secondary</h1>
 			<div class="font-mono">{secondaryText0}</div>
@@ -88,7 +88,7 @@ function App() {
 			<div class="font-mono">{changeSecondary.toString()}</div>
 			<TextBlock {...propsSecondary1} />
 			<div class="font-mono">{secondaryText1}</div>
-			<div class="font-mono">Result: {secondaryText2}</div>
+			<div class="font-mono">Result (after applied transformed primary change): {secondaryText2}</div>
 
 			<p>
 				<div> 
