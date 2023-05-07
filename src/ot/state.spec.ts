@@ -1,5 +1,6 @@
 import { State } from "./state"
 import { Buffer, SimpleBuffer } from "./buffer"
+import { Change } from "./instructions"
 
 describe("state", () => {
   test("dummy1", () => {
@@ -16,6 +17,51 @@ describe("state", () => {
     expect(buffer.getText()).toEqual("ax")
   })
 
+  test("dummy1a", () => {
+    const state1 = new State(123, "test1")
+    state1.localUpdate("this is test")
+
+    const instructions = state1.localUpdate("this was test")
+    expect(instructions.length).toBe(1)
+    const firstChange = instructions[0] as Change
+    expect(firstChange.index).toBe(5)
+    expect(firstChange.remove).toBe(1)
+    expect(firstChange.text).toBe("wa")
+  })
+
+  test("dummy1b", () => {
+    const state1 = new State(123, "test1")
+    state1.localUpdate("this is a longer test")
+
+    const instructions = state1.localUpdate("this was a bit short testing")
+
+    expect(instructions.length).toBe(5)
+
+    const buffer = new SimpleBuffer()
+    buffer.insert(0, "this is a longer test")
+    instructions.forEach((i) => i.applyTo(buffer))
+    expect(buffer.getText()).toBe("this was a bit short testing")
+  })
+
+  test("dummy1c", () => {
+    const state1 = new State(123, "test1")
+    state1.localUpdate("this is a longer test")
+
+    const instructions1 = state1.localUpdate("this was a bit short testing")
+    const instructions2 = state1.localUpdate("this was never a short test")
+    const instructions3 = state1.localUpdate(
+      "this always was a nice test testing"
+    )
+
+    const buffer = new SimpleBuffer()
+    buffer.insert(0, "this is a longer test")
+    instructions1.forEach((i) => i.applyTo(buffer))
+    instructions2.forEach((i) => i.applyTo(buffer))
+    instructions3.forEach((i) => i.applyTo(buffer))
+
+    expect(buffer.getText()).toBe("this always was a nice test testing")
+  })
+
   test("dummy2", () => {
     const state1 = new State(123, "test1")
     const buffer: Buffer = new SimpleBuffer()
@@ -26,7 +72,7 @@ describe("state", () => {
     })
     state1.localUpdate("aaa")
     state1.localUpdate("ax")
-    expect(counter).toEqual(3)
+    expect(counter).toEqual(2)
     expect(buffer.getText()).toEqual("ax")
   })
   test("dummy3", () => {

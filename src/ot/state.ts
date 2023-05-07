@@ -1,6 +1,6 @@
 import { diffChars } from "diff"
 import { Buffer, SimpleBuffer } from "./buffer"
-import { Instruction, cloneMessage } from "./instructions"
+import { Change, Instruction, cloneMessage } from "./instructions"
 import { Subject } from "rxjs"
 
 export type Message = {
@@ -30,19 +30,38 @@ export class State {
 
     let index = 0
     const newInstructions: Instruction[] = []
+    let currentChange: Change | null = null
     changes.forEach((change) => {
-      // TODO
-      /*
+      if (currentChange && index !== currentChange.index) {
+        // flushing
+        newInstructions.push(currentChange)
+        currentChange = null
+      }
       if (change.added) {
-        newInstructions.push(new Insert(index, change.value))
+        if (currentChange !== null) {
+          // we assume here there are never two 'added' at the same index in a row
+          currentChange.text = change.value
+        } else {
+          currentChange = new Change(index, 0, change.value)
+        }
         index += change.value.length
       } else if (change.removed) {
-        newInstructions.push(new Delete(index, change.value.length))
+        if (currentChange !== null) {
+          // we assume here there are never two 'removed' at the same index in a row
+          currentChange.remove = change.value.length
+        } else {
+          currentChange = new Change(index, change.value.length, "")
+        }
       } else {
         index += change.value.length
       }
-      */
     })
+
+    if (currentChange) {
+      // flushing
+      newInstructions.push(currentChange)
+      currentChange = null
+    }
 
     newInstructions.forEach((i) => {
       console.log(`applying local: ${i.toString()}`)

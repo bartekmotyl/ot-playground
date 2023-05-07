@@ -1,5 +1,5 @@
 import { SimpleBuffer } from "./buffer"
-import { Instruction } from "./instructions"
+import { Change, Instruction } from "./instructions"
 
 function testTwoInstructions(
   initialText: string,
@@ -33,13 +33,12 @@ function testTwoInstructions(
     text2: buffer2.getText(),
   }
 }
-/*
 describe("instruction conflicts", () => {
   test("insert-insert at same position", () => {
     const { text1, text2 } = testTwoInstructions(
       "12345",
-      new Insert(1, "b"),
-      new Insert(1, "a")
+      new Change(1, 0, "b"),
+      new Change(1, 0, "a")
     )
 
     expect(text1).toEqual("1ab2345")
@@ -49,12 +48,11 @@ describe("instruction conflicts", () => {
   test("insert-insert at same position", () => {
     const { text1, text2 } = testTwoInstructions(
       "12345",
-      new Insert(1, "b"),
-      new Delete(2, 1)
+      new Change(1, 0, "b"),
+      new Change(2, 1, "")
     )
 
     expect(text1).toEqual("1b245")
     expect(text2).toEqual("1b245")
   })
 })
-*/
