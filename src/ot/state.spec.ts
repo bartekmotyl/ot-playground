@@ -1,6 +1,8 @@
 import { State } from "./state"
 import { Buffer, SimpleBuffer } from "./buffer"
 import { Change } from "./instructions"
+import { range } from "lodash"
+import * as randomSeed from "random-seed"
 
 describe("state", () => {
   test("dummy1", () => {
@@ -110,4 +112,81 @@ describe("state", () => {
 
     expect(state2.getText()).toEqual(state1.getText())
   })
+
+  test("random1", () => {
+    const state1 = new State(123, "random1-test1")
+    const state2 = new State(124, "random1-test2")
+    state1.getMessageSubject().subscribe((msg) => state2.receive(msg))
+    state2.getMessageSubject().subscribe((msg) => state1.receive(msg))
+
+    const count = 10
+    const random = randomSeed.create("seed1")
+
+    range(count).forEach((_i) => {
+      state1.localUpdate(randomModification(random, state1.getText()))
+      state2.localUpdate(randomModification(random, state2.getText()))
+    })
+
+    state1.processReceived()
+    state2.processReceived()
+
+    expect(state2.getText()).toEqual(state1.getText())
+    console.log(state2.getText())
+  })
+
+  test("random2", () => {
+    const state1 = new State(123, "random1-test1")
+    const state2 = new State(124, "random1-test2")
+    state1.getMessageSubject().subscribe((msg) => state2.receive(msg))
+    state2.getMessageSubject().subscribe((msg) => state1.receive(msg))
+
+    const iterations = 100
+
+    range(iterations).forEach((_iteration) => {
+      const count = 30
+      const random = randomSeed.create("hello")
+
+      range(count).forEach((_i) => {
+        state1.localUpdate(randomModification(random, state1.getText()))
+        state2.localUpdate(randomModification(random, state2.getText()))
+      })
+
+      state1.processReceived()
+      state2.processReceived()
+
+      expect(state2.getText()).toEqual(state1.getText())
+      console.log(state2.getText())
+    })
+  })
 })
+
+function randomText(random: randomSeed.RandomSeed, length: number): string {
+  let result = ""
+  const characters =
+    "     ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+  const charactersLength = characters.length
+  let counter = 0
+  while (counter < length) {
+    result += characters.charAt(random(charactersLength))
+    counter += 1
+  }
+  return result
+}
+
+function randomChange(random: randomSeed.RandomSeed, oldText: string): Change {
+  const text = random(2) > 0 ? randomText(random, random(30)) : ""
+  const index = random(oldText.length)
+  const remove = random(2) > 0 ? random(10) : 0
+  return new Change(index, remove, text)
+}
+
+function randomModification(
+  random: randomSeed.RandomSeed,
+  text: string
+): string {
+  const buffer = new SimpleBuffer()
+  buffer.insert(0, text)
+  const change = randomChange(random, text)
+  change.applyTo(buffer)
+  return buffer.getText()
+}
