@@ -1,5 +1,6 @@
 import { SimpleBuffer } from "./buffer"
 import { Change, Instruction } from "./instructions"
+import { xform } from "./xform"
 
 function testTwoInstructions(
   initialText: string,
@@ -15,14 +16,14 @@ function testTwoInstructions(
   i2.applyTo(buffer2)
 
   // at agent 1
-  const transformedFor1 = i2.xform(i1, true)
+  const transformedFor1 = xform(i2, i1, true)
   console.debug(
     `agent 1: transformed remote ${i2.toString()} to ${transformedFor1[0].toString()}`
   )
   transformedFor1[0].applyTo(buffer1)
 
   // at agent 2
-  const transformedFor2 = i1.xform(i2, false)
+  const transformedFor2 = xform(i1, i2, false)
   console.debug(
     `agent 2: transformed remote ${i1.toString()} to ${transformedFor2[0].toString()}`
   )

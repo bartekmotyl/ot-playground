@@ -2,6 +2,7 @@ import { diffChars } from "diff"
 import { Buffer, SimpleBuffer } from "./buffer"
 import { Change, Instruction, cloneMessage } from "./instructions"
 import { Subject } from "rxjs"
+import { xform } from "./xform"
 
 export type Message = {
   myMessagesCount: number
@@ -117,10 +118,11 @@ export class State {
         const oper1 = receivedMsgBeingProcessed.operation
         const oper2 = msgOutgoing.operation
 
-        const otherWins =
+        const isPrimary =
           receivedMsgBeingProcessed.creatorId > msgOutgoing.creatorId
 
-        const ot = oper1.xform(oper2, otherWins)
+        //const ot = oper1.xform(oper2, otherWins)
+        const ot = xform(oper1, oper2, isPrimary)
 
         console.group(`xform at ${this.label}`)
         console.debug(`Input oper1: ${oper1.toString()}`)

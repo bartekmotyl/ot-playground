@@ -5,6 +5,7 @@ import { Change } from "./ot/instructions";
 import { SimpleBuffer, Buffer } from "./ot/buffer";
 import { useState } from 'preact/hooks';
 import { ChangeConfig } from "./simulator/ChangeConfig";
+import { xform } from "./ot/xform";
 
 function calcTextBlockProps(text: string, change: Change): TextBlockProps {
 	
@@ -49,8 +50,8 @@ function App() {
 	changeSecondary.applyTo(bufferSecondary)
 	const secondaryText1 = bufferSecondary.getText()
 
-	const xformOfChangePrimary = changePrimary.xform(changeSecondary, true)
-	const xformOfChangeSecondary = changeSecondary.xform(changePrimary, false)
+	const xformOfChangePrimary = xform(changePrimary, changeSecondary, true)
+	const xformOfChangeSecondary = xform(changeSecondary, changePrimary, false)
 
 	xformOfChangePrimary[1].applyTo(bufferPrimary)
 
